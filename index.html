@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#f4f7f4" />
+    <meta name="description" content="A clean, live weather forecast dashboard." />
+    <title>Skycast — Weather forecast</title>
+    <link rel="preconnect" href="https://api.open-meteo.com" />
+    <link rel="preconnect" href="https://geocoding-api.open-meteo.com" />
+    <link rel="stylesheet" href="styles.css" />
+    <script src="app.js" defer></script>
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar" aria-label="Weather controls">
+        <a class="brand" href="#top" aria-label="Skycast home">
+          <span class="brand-mark" aria-hidden="true"><span></span><span></span><span></span></span>
+          <span>skycast<span class="brand-period">.</span></span>
+        </a>
+
+        <div class="sidebar-label">YOUR WEATHER</div>
+        <form id="search-form" class="search-form" role="search">
+          <label class="sr-only" for="city-search">Search city or postcode</label>
+          <span class="search-icon" aria-hidden="true">⌕</span>
+          <input id="city-search" name="city" type="search" placeholder="Search city…" autocomplete="off" />
+          <button class="search-submit" type="submit" aria-label="Search">↵</button>
+        </form>
+        <div id="search-results" class="search-results" role="listbox" aria-label="Matching places" hidden></div>
+
+        <button id="location-button" class="location-button" type="button">
+          <span class="location-crosshair" aria-hidden="true">◎</span>
+          <span>Use my location</span>
+          <span class="button-arrow" aria-hidden="true">↗</span>
+        </button>
+
+        <div class="sidebar-label quick-label">QUICK LOOK</div>
+        <nav class="quick-cities" aria-label="Popular cities">
+          <button type="button" data-city="New Delhi">New Delhi <span>IN</span></button>
+          <button type="button" data-city="Tokyo">Tokyo <span>JP</span></button>
+          <button type="button" data-city="London">London <span>UK</span></button>
+          <button type="button" data-city="New York">New York <span>US</span></button>
+        </nav>
+
+        <div class="sidebar-note">
+          <span class="note-sun" aria-hidden="true">✳</span>
+          <p>Good weather changes<br />the way a day feels.</p>
+          <span class="note-caption">A little forecast goes a long way.</span>
+        </div>
+
+        <div class="sidebar-footer"><span class="live-dot"></span> LIVE FORECAST <span class="footer-divider">·</span> WORLDWIDE</div>
+      </aside>
+
+      <main id="top" class="main-content">
+        <header class="topbar">
+          <div class="breadcrumb"><span>WEATHER</span><span class="crumb-slash">/</span><span id="breadcrumb-place">OVERVIEW</span></div>
+          <div class="topbar-actions">
+            <div class="updated-label"><span class="live-dot"></span><span id="updated-at">Connecting to forecast</span></div>
+            <div class="unit-toggle" role="group" aria-label="Temperature units">
+              <button type="button" data-unit="celsius" class="unit-option active" aria-pressed="true">°C</button>
+              <button type="button" data-unit="fahrenheit" class="unit-option" aria-pressed="false">°F</button>
+            </div>
+            <button id="refresh-button" class="refresh-button" type="button" aria-label="Refresh forecast" title="Refresh forecast">↻</button>
+          </div>
+        </header>
+
+        <div id="app-message" class="app-message" role="status" aria-live="polite" hidden></div>
+
+        <section class="welcome-row" aria-label="Page heading">
+          <div>
+            <p class="eyebrow">YOUR DAILY WEATHER BRIEFING</p>
+            <h1>Forecast <span>for the day ahead.</span></h1>
+          </div>
+          <div class="date-chip"><span class="calendar-icon" aria-hidden="true">▦</span><span id="today-date">—</span></div>
+        </section>
+
+        <section class="current-grid" aria-label="Current weather">
+          <article class="hero-card">
+            <div class="hero-orbit orbit-one"></div><div class="hero-orbit orbit-two"></div>
+            <div class="hero-topline"><span class="hero-kicker"><span class="tiny-sun">✳</span> RIGHT NOW</span><span id="current-local-time" class="local-time">—</span></div>
+            <div class="hero-place-row">
+              <div><h2 id="place-name">Finding your forecast</h2><p id="place-region" class="place-region">Please wait a moment</p></div>
+              <div id="current-icon" class="weather-illustration" aria-hidden="true">☀</div>
+            </div>
+            <div class="temperature-row"><span id="current-temperature" class="current-temperature">—</span><span id="temperature-unit-mark" class="temperature-unit-mark">°C</span></div>
+            <p id="current-summary" class="current-summary">Loading local conditions…</p>
+            <div class="hero-bottom">
+              <div class="high-low"><span>H <b id="today-high">—</b></span><span class="high-low-separator">/</span><span>L <b id="today-low">—</b></span></div>
+              <span id="feels-like" class="feels-like">Feels like —</span>
+            </div>
+          </article>
+
+          <div class="metrics-grid" aria-label="Weather details">
+            <article class="metric-card">
+              <div class="metric-heading"><span class="metric-icon humidity-icon" aria-hidden="true">≋</span><span>HUMIDITY</span></div>
+              <div class="metric-value"><span id="humidity-value">—</span><small>%</small></div>
+              <div class="metric-foot"><span class="metric-dot"></span> Relative humidity</div>
+              <div class="metric-meter"><span id="humidity-meter"></span></div>
+            </article>
+            <article class="metric-card">
+              <div class="metric-heading"><span class="metric-icon wind-icon" aria-hidden="true">↗</span><span>WIND</span></div>
+              <div class="metric-value"><span id="wind-value">—</span><small id="wind-unit">km/h</small></div>
+              <div class="metric-foot"><span class="metric-dot"></span> At 10 metres</div>
+              <div class="wind-direction"><span id="wind-arrow" aria-hidden="true">↑</span><span id="wind-direction-text">—</span></div>
+            </article>
+            <article class="metric-card">
+              <div class="metric-heading"><span class="metric-icon rain-icon" aria-hidden="true">⌁</span><span>RAIN CHANCE</span></div>
+              <div class="metric-value"><span id="rain-value">—</span><small>%</small></div>
+              <div class="metric-foot"><span class="metric-dot"></span> Peak chance today</div>
+              <div class="rain-track"><span id="rain-meter"></span></div>
+            </article>
+            <article class="metric-card">
+              <div class="metric-heading"><span class="metric-icon uv-icon" aria-hidden="true">☼</span><span>UV INDEX</span></div>
+              <div class="metric-value"><span id="uv-value">—</span><small id="uv-level">—</small></div>
+              <div class="metric-foot"><span class="metric-dot"></span> Today's peak</div>
+              <div class="uv-scale"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><span id="uv-indicator"></span></div>
+            </article>
+          </div>
+        </section>
+
+        <section class="forecast-section hourly-section" aria-labelledby="hourly-title">
+          <div class="section-heading">
+            <div><p class="eyebrow">THE NEXT FEW HOURS</p><h2 id="hourly-title">Hourly forecast</h2></div>
+            <span id="hourly-caption" class="section-caption">Temperature & chance of rain</span>
+          </div>
+          <div id="hourly-forecast" class="hourly-list" aria-live="polite"></div>
+        </section>
+
+        <section class="forecast-section daily-section" aria-labelledby="daily-title">
+          <div class="section-heading">
+            <div><p class="eyebrow">PLAN AHEAD</p><h2 id="daily-title">7-day outlook</h2></div>
+            <span class="section-caption">A week at a glance</span>
+          </div>
+          <div id="daily-forecast" class="daily-list" aria-live="polite"></div>
+        </section>
+
+        <footer class="page-footer">
+          <span>Forecast data by <a href="https://open-meteo.com/" target="_blank" rel="noreferrer">Open-Meteo</a></span>
+              <span>Weather is a forecast, not a promise.</span>
+        </footer>
+      </main>
+    </div>
+  </body>
+</html>
